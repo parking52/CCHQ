@@ -1,2 +1,2 @@
-The file contains a sentence to test the generate function.
-I am having another line.
+['The', 'file', 'contains', 'a', 'sentence', 'to', 'test', 'the', 'generate', 'function', '.']
+['I', 'am', 'having', 'another', 'line', '.']

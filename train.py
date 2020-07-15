@@ -1,19 +1,23 @@
-from library_viterby import create_dictionaries, create_transition_matrix, create_emission_matrix, initialize, \
-    viterbi_forward, viterbi_backward, preprocess
+from library_viterby import create_dictionaries, create_transition_matrix, create_emission_matrix
 from eval import tokenlist_to_sentence
 from conllu import parse_incr
 from numpy import savetxt
+import json
+import sys
 
-
-data_file = open("artifacts/source/en_gum-ud-train.conllu", "r", encoding="utf-8")
 
 all_words = []
 training_corpus = []
-
 count = 0
 
-for tokenlist in parse_incr(data_file):
-    count +=1
+try:
+    data_file = sys.argv[1]
+except IndexError:
+    print('using default file')
+    data_file = "artifacts/source/en_gum-ud-train.conllu"
+
+for tokenlist in parse_incr(open(data_file, "r", encoding="utf-8")):
+    count += 1
     sentence, tags = tokenlist_to_sentence(tokenlist)
     for word, tag in zip(sentence, tags):
         all_words.append(word)
@@ -51,35 +55,14 @@ states = sorted(tag_counts.keys())
 A = create_transition_matrix(alpha, tag_counts, transition_counts)
 B = create_emission_matrix(alpha, tag_counts, emission_counts, list(vocab))
 
-savetxt('artifacts/model/transition_matrix.csv', A)
-savetxt('artifacts/model/emission_matrix.csv', A)
+
+def save_artifacts(A, B, states, vocab, tag_counts):
+    savetxt('artifacts/model/transition_matrix.csv', A, delimiter=',')
+    savetxt('artifacts/model/emission_matrix.csv', B, delimiter=',')
+    with open('artifacts/model/states.txt', 'w') as filehandle:
+        json.dump(states, filehandle)
+    json.dump(vocab, open("artifacts/model/vocab.json", 'w'))
+    json.dump(tag_counts, open("artifacts/model/tag_counts.json", 'w'))
 
 
-_, processed_text_corpus = preprocess(vocab, "artifacts/source/gum_test_words.txt")
-
-
-from eval import predict
-pred = predict(states, A, B, vocab, tag_counts, processed_text_corpus)
-
-count = 0
-current_count = 0
-count_correct = 0
-
-data_file = open("artifacts/source/en_gum-ud-test.conllu", "r", encoding="utf-8")
-
-for tokenlist in parse_incr(data_file):
-    read_sentence, true_tags = tokenlist_to_sentence(tokenlist)
-    print(tokenlist)
-    #predicted_tags = predict(sentence)
-    for word_idx in range(len(read_sentence)):
-        if true_tags[word_idx] == pred[word_idx+current_count]:
-            count_correct += 1
-        count += 1
-    current_count = count
-
-print(f'{count} words have been evaluated')
-print(f'{count_correct} words were accurate')
-accuracy = count_correct / count
-print(f'accuracy is {accuracy}')
-
-
+save_artifacts(A, B, states, vocab, tag_counts)
