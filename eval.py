@@ -75,7 +75,7 @@ if __name__ == "__main__":
     create_test_words_file(data_file, word_file_path)
 
     A, B, vocab, tag_counts, states = read_training_artifacts()
-    _, processed_text_corpus = preprocess(vocab, "artifacts/source/gum_test_words.txt")
+    _, processed_text_corpus = preprocess(vocab, word_file_path)
     predictions = predict(states, A, B, vocab, tag_counts, processed_text_corpus)
 
     compare_predictions(data_file, predictions)
